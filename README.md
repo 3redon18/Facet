@@ -21,6 +21,7 @@ A custom lock screen for small Android phones like the Sidephone. Clock, date, n
 <img src="screenshots/photo.png" width="240" alt="A photo wallpaper behind translucent cards">
 <img src="screenshots/clock-editor.png" width="240" alt="Editing the date right on the lock screen">
 <img src="screenshots/appearance.png" width="240" alt="Changing the background and card colors">
+<img src="screenshots/cards.png" width="240" alt="Picking a card color">
 </p>
 
 Names and photos in these screenshots are covered for privacy.
