@@ -45,6 +45,17 @@ Then turn on **Use the custom lock screen** in Facet's settings and lock your ph
 
 > Facet draws on top of your normal lock screen. It does **not** replace your PIN or fingerprint, so your phone stays as secure as before. Swipe up to reach the normal unlock screen.
 
+### Make sure Facet is actually showing
+
+Facet isn't a real lock screen. Android doesn't let regular apps replace it, so Facet draws itself on top of the lock screen your phone already has. That means a few things have to line up:
+
+1. **Set your phone's own screen lock to Swipe** (Settings > Security > Screen lock). A PIN or pattern also works. Avoid "None", which is not what Facet was tested with.
+2. In Facet's settings, turn on **Use the custom lock screen**.
+3. Both permissions above must be on. Without Notification access, Facet can't tell when the screen turns off, so it never appears.
+4. **Test it:** press the power button to turn the screen off, then press it again. You should see Facet's clock and "swipe up to open". If you see your phone's normal lock screen instead, go back through steps 1 to 3.
+
+Because the normal lock screen is still underneath, swiping up on Facet takes you to it. If you use a PIN or pattern, it asks for it then. If notifications show private text, use Facet's "hide message text" setting.
+
 ## Using it
 
 | Do this | To get this |
