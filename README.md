@@ -72,4 +72,4 @@ This produces `Facet.apk`, signed with a key it generates the first time. Keep t
 
 ## Status
 
-A hobby project. I've tested it on my own Sidephone, so expect rough edges on other phones. Bug reports and ideas are welcome in Issues.
+A hobby project, shared as-is. I use it on my own Sidephone and it works for me, but I'm not offering support or planning fixes for other phones. You're welcome to use it, change it, or build on it under the MIT license.
