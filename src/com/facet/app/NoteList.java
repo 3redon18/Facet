@@ -71,7 +71,8 @@ final class NoteList extends ScrollView {
     private EditText replyBox;
     private boolean touchingCard;
     /** A real double-tap window, in ms: a slower second tap is a separate tap, not "open". */
-    private static final long DOUBLE_TAP = 450;
+    private static final long DOUBLE_TAP = 350;
+    private Runnable pendingTap;   // the one-tap action, held back briefly in case a second tap follows
     private String lastTapKey;
     private long lastTapAt;
     // the seek bar on a player, and the once-a-second nudge that keeps it moving
@@ -297,9 +298,11 @@ final class NoteList extends ScrollView {
     }
 
     /** True if this finger-down is the second tap of a double tap; opens the app right away, without waiting for the finger to lift. */
-    private boolean secondTapDown(Face.Note n) {
-        if (!n.key.equals(lastTapKey) || android.os.SystemClock.uptimeMillis() - lastTapAt >= DOUBLE_TAP) return false;
+    private boolean secondTapDown(Face.Note n, long eventTime) {
+        // the touch's own timestamp, so a slow rebuild after the first tap can't eat the window
+        if (!n.key.equals(lastTapKey) || eventTime - lastTapAt >= DOUBLE_TAP) return false;
         lastTapKey = null;
+        if (pendingTap != null) { removeCallbacks(pendingTap); pendingTap = null; }
         host.open(n);
         return true;
     }
@@ -443,8 +446,12 @@ final class NoteList extends ScrollView {
         card.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 if (stack != null) { openStacks.add(keyOf(n)); rebuild(); return; }
+                if (pendingTap != null) { removeCallbacks(pendingTap); pendingTap = null; }
                 if (doubleTapOpen(n)) { host.open(n); return; }   // quick second tap opens the app
-                if (canExpand) setExpanded(n, !expanded.contains(n.key));   // one tap opens or closes the preview
+                if (canExpand) {   // one tap opens or closes the preview, but only once it's clear no second tap is coming
+                    pendingTap = new Runnable() { public void run() { pendingTap = null; setExpanded(n, !expanded.contains(n.key)); } };
+                    postDelayed(pendingTap, DOUBLE_TAP);
+                }
             }
         });
         if (stack == null) {
@@ -760,7 +767,7 @@ final class NoteList extends ScrollView {
             public boolean onTouch(View view, MotionEvent e) {
                 int a = e.getActionMasked();
                 if (ignore) { if (a == MotionEvent.ACTION_UP || a == MotionEvent.ACTION_CANCEL) ignore = false; return true; }
-                if (a == MotionEvent.ACTION_DOWN && secondTapDown(n)) { ignore = true; return true; }
+                if (a == MotionEvent.ACTION_DOWN && secondTapDown(n, e.getEventTime())) { ignore = true; return true; }
                 return false;
             }
         });
@@ -988,7 +995,7 @@ final class NoteList extends ScrollView {
                 switch (e.getActionMasked()) {
                     case MotionEvent.ACTION_DOWN:
                         downX = e.getRawX(); downY = e.getRawY(); swiping = false; ignore = false;
-                        if (stack == null && secondTapDown(n)) { ignore = true; return true; }
+                        if (stack == null && secondTapDown(n, e.getEventTime())) { ignore = true; return true; }
                         return false;
                     case MotionEvent.ACTION_MOVE: {
                         float dx = e.getRawX() - downX, dy = e.getRawY() - downY;
