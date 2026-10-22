@@ -71,7 +71,7 @@ final class NoteList extends ScrollView {
     private EditText replyBox;
     private boolean touchingCard;
     /** A real double-tap window, in ms: a slower second tap is a separate tap, not "open". */
-    private static final long DOUBLE_TAP = 300;
+    private static final long DOUBLE_TAP = 450;
     private String lastTapKey;
     private long lastTapAt;
     // the seek bar on a player, and the once-a-second nudge that keeps it moving
@@ -294,6 +294,14 @@ final class NoteList extends ScrollView {
         lastTapKey = quick ? null : n.key;
         lastTapAt = now;
         return quick;
+    }
+
+    /** True if this finger-down is the second tap of a double tap; opens the app right away, without waiting for the finger to lift. */
+    private boolean secondTapDown(Face.Note n) {
+        if (!n.key.equals(lastTapKey) || android.os.SystemClock.uptimeMillis() - lastTapAt >= DOUBLE_TAP) return false;
+        lastTapKey = null;
+        host.open(n);
+        return true;
     }
 
     private TextView text(String s, int sp, int color, boolean bold) {
@@ -747,6 +755,15 @@ final class NoteList extends ScrollView {
         box.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) { if (doubleTapOpen(n)) host.open(n); }
         });
+        box.setOnTouchListener(new View.OnTouchListener() {
+            boolean ignore;
+            public boolean onTouch(View view, MotionEvent e) {
+                int a = e.getActionMasked();
+                if (ignore) { if (a == MotionEvent.ACTION_UP || a == MotionEvent.ACTION_CANCEL) ignore = false; return true; }
+                if (a == MotionEvent.ACTION_DOWN && secondTapDown(n)) { ignore = true; return true; }
+                return false;
+            }
+        });
         box.setOnLongClickListener(new View.OnLongClickListener() {
             public boolean onLongClick(View v) { gutsKey = n.key; scrollTo = n.key; rebuild(); return true; }
         });
@@ -965,11 +982,13 @@ final class NoteList extends ScrollView {
         final float slop = ViewConfiguration.get(getContext()).getScaledTouchSlop() * 2;
         v.setOnTouchListener(new View.OnTouchListener() {
             float downX, downY;
-            boolean swiping;
+            boolean swiping, ignore;
             public boolean onTouch(View view, MotionEvent e) {
+                if (ignore) { if (e.getActionMasked() == MotionEvent.ACTION_UP || e.getActionMasked() == MotionEvent.ACTION_CANCEL) ignore = false; return true; }
                 switch (e.getActionMasked()) {
                     case MotionEvent.ACTION_DOWN:
-                        downX = e.getRawX(); downY = e.getRawY(); swiping = false;
+                        downX = e.getRawX(); downY = e.getRawY(); swiping = false; ignore = false;
+                        if (stack == null && secondTapDown(n)) { ignore = true; return true; }
                         return false;
                     case MotionEvent.ACTION_MOVE: {
                         float dx = e.getRawX() - downX, dy = e.getRawY() - downY;
